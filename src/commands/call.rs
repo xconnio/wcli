@@ -4,10 +4,22 @@ use std::sync::Arc;
 use tokio::sync::Semaphore;
 use xconn::sync::CallRequest;
 
-/// Builds a CallRequest from the procedure name and parsed arguments.
-fn build_call_request(procedure: &str, args: &[String]) -> CallRequest {
-    let mut request = CallRequest::new(procedure);
-    for arg in args {
+/// Parses a "key=value" string and returns the key and parsed value.
+fn parse_key_value(input: &str) -> Option<(String, ParsedArg)> {
+    let parts: Vec<&str> = input.splitn(2, '=').collect();
+    if parts.len() == 2 {
+        Some((parts[0].to_string(), parse_arg(parts[1])))
+    } else {
+        None
+    }
+}
+
+/// Builds a CallRequest from the CallConfig.
+fn build_call_request(config: &CallConfig) -> CallRequest {
+    let mut request = CallRequest::new(&config.procedure);
+
+    // Add positional arguments
+    for arg in &config.args {
         request = match parse_arg(arg) {
             ParsedArg::Integer(v) => request.arg(v),
             ParsedArg::Float(v) => request.arg(v),
@@ -15,6 +27,31 @@ fn build_call_request(procedure: &str, args: &[String]) -> CallRequest {
             ParsedArg::String(v) => request.arg(v),
         };
     }
+
+    // Add keyword arguments
+    for kwarg in &config.kwargs {
+        if let Some((key, value)) = parse_key_value(kwarg) {
+            request = match value {
+                ParsedArg::Integer(v) => request.kwarg(&key, v),
+                ParsedArg::Float(v) => request.kwarg(&key, v),
+                ParsedArg::Boolean(v) => request.kwarg(&key, v),
+                ParsedArg::String(v) => request.kwarg(&key, v),
+            };
+        }
+    }
+
+    // Add options
+    for opt in &config.options {
+        if let Some((key, value)) = parse_key_value(opt) {
+            request = match value {
+                ParsedArg::Integer(v) => request.option(&key, v),
+                ParsedArg::Float(v) => request.option(&key, v),
+                ParsedArg::Boolean(v) => request.option(&key, v),
+                ParsedArg::String(v) => request.option(&key, v),
+            };
+        }
+    }
+
     request
 }
 
@@ -33,7 +70,7 @@ async fn run_session(
     };
 
     for iteration in 0..call_config.repeat {
-        let request = build_call_request(&call_config.procedure, &call_config.args);
+        let request = build_call_request(&call_config);
 
         match session.call(request).await {
             Ok(result) => {

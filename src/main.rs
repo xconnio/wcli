@@ -19,6 +19,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Call {
             procedure,
             args,
+            kwargs,
+            options,
             repeat,
             parallel,
             concurrency,
@@ -26,6 +28,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let call_config = CallConfig {
                 procedure,
                 args,
+                kwargs,
+                options,
                 repeat,
                 parallel,
                 concurrency,

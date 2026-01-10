@@ -52,6 +52,14 @@ pub enum Commands {
         #[arg()]
         args: Vec<String>,
 
+        /// Keyword argument for the call. To enforce value is always a string, send value in quotes e.g."'1'" or '"true"'. (May be provided multiple times)
+        #[arg(short = 'k', long = "kwarg", value_name = "KEY=VALUE")]
+        kwargs: Vec<String>,
+
+        /// WAMP call option (May be provided multiple times)
+        #[arg(short = 'o', long = "option", value_name = "KEY=VALUE")]
+        options: Vec<String>,
+
         /// Number of times to repeat the call per session
         #[arg(long, default_value_t = 1)]
         repeat: u32,
