@@ -110,6 +110,8 @@ impl From<&Cli> for ConnectionConfig {
 pub struct CallConfig {
     pub procedure: String,
     pub args: Vec<String>,
+    pub kwargs: Vec<String>,
+    pub options: Vec<String>,
     pub repeat: u32,
     pub parallel: u32,
     pub concurrency: usize,
